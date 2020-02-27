@@ -41,7 +41,13 @@ class Parser{
         Video[] videos = new Video[videoTitles.Length];
         for (int i = 0; i < videos.Length; i++)
         {
-            videos[i] = new Video(name: videoTitles[i].ToString(),id:videoIds[i].ToString(),views:0,uploadDate:DateTime.Parse(videoUploadDates[i].ToString()),thumbnail:videoThumbnails[i].ToString());
+            videos[i] = new Video{
+                name= videoTitles[i].ToString(),
+                id=videoIds[i].ToString(),
+                views=0,
+                uploadDate=DateTime.Parse(videoUploadDates[i].ToString()),
+                thumbnail=videoThumbnails[i].ToString()
+            };
         }
         return videos;
     }

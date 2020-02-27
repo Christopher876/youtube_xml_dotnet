@@ -4,8 +4,8 @@ using System;
 
 class YoutubeChannel{
     private readonly string baseUrl = "https://www.youtube.com/feeds/videos.xml?channel_id="; 
-    string author;
-    string id;
+    public string author;
+    public string id;
     public YoutubeChannel(string author, string url){
         this.author = author;
         this.id = url;
