@@ -7,7 +7,6 @@ using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Net.Http;
 using HtmlAgilityPack;
-using System.Threading;
 using System.Xml.Linq;
 
 class ChannelManager{
@@ -18,7 +17,7 @@ class ChannelManager{
     }
 
     /// <summary>
-    /// Generate an inital database and channel list json using a txt file
+    /// Generate an inital database and channel list json using a txt file that contains a list of youtube channel ids
     /// </summary>
     public void GenerateInitialManager(){
         List<YoutubeChannel> _channels = new List<YoutubeChannel>();
@@ -101,6 +100,11 @@ class ChannelManager{
         }
     }
 
+    /// <summary>
+    /// Retrieves the XML feed from a given youtube channel id
+    /// </summary>
+    /// <param name="id">The YouTube Channel id</param>
+    /// <returns></returns>
     private XDocument getChannelFeed(string id){
         string url = Utils.channelBaseUrl+id;
         string result = "";
@@ -113,6 +117,11 @@ class ChannelManager{
         return XDocument.Parse(result);
     }
 
+    /// <summary>
+    /// Tries to get a youtube channel id from a youtube username
+    /// </summary>
+    /// <param name="author">Youtube Username</param>
+    /// <returns></returns>
     private string getChannelId(string author){
         string result;
 
@@ -131,6 +140,11 @@ class ChannelManager{
         return channelId.Replace("https://www.youtube.com/channel/","");
     }
 
+    /// <summary>
+    /// Gets a Youtube Channel Author using the channel id
+    /// </summary>
+    /// <param name="id">Youtube Channel ID</param>
+    /// <returns></returns>
     private string getChannelAuthor(string id){
         var name = new Parser(getChannelFeed(id)).ParseChannelName();
         return name.ToString();
@@ -186,6 +200,10 @@ class ChannelManager{
         File.WriteAllText(@"youtube-channels.json",JsonConvert.SerializeObject(json));  
     }
 
+    /// <summary>
+    /// Sets the class channels variable to all the channels that are inputted from a provided json
+    /// </summary>
+    /// <param name="json">formatted youtube channels json object</param>
     private void SetChannels(JObject json){
         channels = new List<YoutubeChannel>();
         var _channels = json["channels"];
