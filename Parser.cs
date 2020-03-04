@@ -13,6 +13,10 @@ class Parser{
         this.jsonDocument = JObject.Parse(JsonConvert.SerializeXNode(doc));
     }
 
+    public JToken ParseChannelName(){
+        return jsonDocument["feed"]["author"]["name"];
+    }
+
     private JToken[] ParseTitles(){
         return jsonDocument["feed"]["entry"].Select(x => x["title"]).ToArray();
     }
