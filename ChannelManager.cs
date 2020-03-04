@@ -39,31 +39,23 @@ class ChannelManager{
             //Let's save all of the gathered channels to the json
             //If it exists, start with this json
             JObject json;
-            if(File.Exists(@"youtube-channels.json")){
-                //If file is empty, create the file hierarchy
-                if(new FileInfo(@"youtube-channels.json").Length == 0){
-                    json = new JObject(new JProperty("channels"));
-                    File.WriteAllText(@"youtube-channels.json",JsonConvert.SerializeObject(json));
-                }
-
-                json = JObject.Parse(File.ReadAllText(@"youtube-channels.json"));
-                JArray channelsArray = (JArray)json["channels"];
-                //After checking if it exists, lets add all the channels with their ids to the json
-                foreach(var channel in _channels){
-                    channelsArray.Add(new JObject{
-                        new JProperty("author",channel.author),
-                        new JProperty("channel-id",channel.id)
-                    });
-                }
-
-                //Set the class channels variable to the all of the new channels that were found and save the file
-                SetChannels(json);
-                SaveChannelList();
+            //If file is empty, create the file hierarchy
+            if(!File.Exists(@"youtube-channels.json") || new FileInfo(@"youtube-channels.json").Length == 0){
+                json = new JObject(new JProperty("channels"));
+                File.WriteAllText(@"youtube-channels.json",JsonConvert.SerializeObject(json));
             }
-            //TODO handle the creation of the file if the file does not exist
-            else{
-
+            json = JObject.Parse(File.ReadAllText(@"youtube-channels.json"));
+            JArray channelsArray = (JArray)json["channels"];
+            //After checking if it exists, lets add all the channels with their ids to the json
+            foreach(var channel in _channels){
+                channelsArray.Add(new JObject{
+                    new JProperty("author",channel.author),
+                    new JProperty("channel-id",channel.id)
+                });
             }
+            //Set the class channels variable to the all of the new channels that were found and save the file
+            SetChannels(json);
+            SaveChannelList();
         }
         else{
             return;
