@@ -21,8 +21,12 @@ namespace youtube_xml_dotnet
                 // var o = db.videos.Where(b => b.name.Contains("Batty Gone Wild")).ToArray();
                 // Console.WriteLine("Name:" + o[0].name + " url: " + o[0].id + " upload date: " + o[0].uploadDate);
                 // db.Remove(o);
-                ChannelManager manager = new ChannelManager(channels:new List<YoutubeChannel>{new YoutubeChannel("Chris","oeuowuir"),new YoutubeChannel("Chris2","oytuowuir"),});
-                manager.LoadChannelList();
+                //ChannelManager manager = new ChannelManager(channels:new List<YoutubeChannel>{new YoutubeChannel("Chris","oeuowuir"),new YoutubeChannel("Chris2","oytuowuir"),});
+                //manager.LoadChannelList();
+
+                ChannelManager manager = new ChannelManager();
+                // manager.GenerateInitialManager(filename:"channels.txt",isFile:true);
+                manager.GenerateInitialManager();
             }
             
         }

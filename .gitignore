@@ -40,3 +40,4 @@ msbuild.wrn
 *.db-shm
 *.db-wal
 *.json
+*.txt
