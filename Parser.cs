@@ -14,23 +14,48 @@ class Parser{
     }
 
     public JToken ParseChannelName(){
-        return jsonDocument["feed"]["author"]["name"];
+        try{
+            return jsonDocument["feed"]["author"]["name"];
+        }
+        catch{
+            return null;
+        }
     }
 
     private JToken[] ParseTitles(){
-        return jsonDocument["feed"]["entry"].Select(x => x["title"]).ToArray();
+        try{
+            return jsonDocument["feed"]["entry"].Select(x => x["title"]).ToArray();
+        } 
+        catch{
+            return null;
+        }
     }
 
     private JToken[] ParseIds(){
-        return jsonDocument["feed"]["entry"].Select(x => x["link"]["@href"]).ToArray();
+        try{
+            return jsonDocument["feed"]["entry"].Select(x => x["link"]["@href"]).ToArray();
+        }
+        catch{
+            return new JToken[1]{"0"};
+        }
     }
 
     private JToken[] ParseUploadDate(){
-        return jsonDocument["feed"]["entry"].Select(x => x["published"]).ToArray();
+        try{
+            return jsonDocument["feed"]["entry"].Select(x => x["published"]).ToArray();
+        }
+        catch{
+            return null;
+        }
     }
 
     private JToken[] ParseThumbnail(){
-        return jsonDocument["feed"]["entry"].Select(x => x["media:group"]["media:thumbnail"]["@url"]).ToArray();
+        try{
+            return jsonDocument["feed"]["entry"].Select(x => x["media:group"]["media:thumbnail"]["@url"]).ToArray();
+        }
+        catch{
+            return null;
+        }
     }
 
     public Video[] ParseVideos()
@@ -47,7 +72,7 @@ class Parser{
         {
             videos[i] = new Video{
                 name= videoTitles[i].ToString(),
-                id=videoIds[i].ToString(),
+                id=videoIds[i].ToString().Replace("https://www.youtube.com/watch?v=",""),
                 views=0,
                 uploadDate=DateTime.Parse(videoUploadDates[i].ToString()),
                 thumbnail=videoThumbnails[i].ToString()
