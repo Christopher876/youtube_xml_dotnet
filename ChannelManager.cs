@@ -50,29 +50,14 @@ class ChannelManager{
                     new JProperty("channel-id",channel.id)
                 });
             }
-
-            //Now that we have the channel list, lets add all the initial videos so that there is no notification
-            using(var db = new VideoContext()){
-                foreach(var channel in _channels){
-                    Thread.Sleep(1000);
-                    var feed = getChannelFeed(channel.id);
-                    Parser parser = new Parser(feed);
-                    var videos = parser.ParseVideos();
-                    foreach(var video in videos){
-                        if(db.videos.Where(x => x.id != video.id).ToArray().Length == 0)
-                            db.Add(video);
-                    }
-                }
-                db.SaveChanges();
-            }
-
-
-            //Set the class channels variable to the all of the new channels that were found and save the file
+            //Set the class channels variable to the all of the new channels that were found and save the file and the database
             SetChannels(json);
+            SaveChannelsToSql();
             SaveChannelList();
         }
         else{
-            return;
+            Console.WriteLine("channel-list.txt does not exist... Exitting");
+            Environment.Exit(0);
         }
     }
 
@@ -113,6 +98,62 @@ class ChannelManager{
         else{
             Console.WriteLine("Added Something");
         }
+    }
+
+
+    public void AddChannels(){
+        //Load the json to get our existing channels
+        Console.WriteLine("Adding YouTube channels to server...");
+        JObject json = JObject.Parse(File.ReadAllText(@"youtube-channels.json"));
+        SetChannels(json);
+
+        if(File.Exists(@"channel-list.txt")){
+            //Get all the ids
+            List<string> s = File.ReadAllLines(@"channel-list.txt").ToList();
+            List<YoutubeChannel> _channels = GetChannelFromID(s);
+
+            //Remove any duplicated channels
+            var temp = _channels.Where(x => !channels.Any(y => x.id == y.id));
+            channels.AddRange(temp);
+            SaveChannelsToSql();
+            SaveChannelList();
+        }
+    }
+
+    /// <summary>
+    /// Save the all the videos from the channels in the channels object to the videos database
+    /// </summary>
+    private void SaveChannelsToSql(){
+        using(var db = new VideoContext()){
+            foreach(var channel in channels){
+                Thread.Sleep(1000);
+                var feed = getChannelFeed(channel.id);
+                Parser parser = new Parser(feed);
+                var videos = parser.ParseVideos();
+                foreach(var video in videos){
+                    if(db.videos.Where(x => x.id != video.id).ToArray().Length == 0)
+                        db.Add(video);
+                }
+            }
+            db.SaveChanges();
+        }
+    }
+
+    /// <summary>
+    /// Get all youtube channels
+    /// </summary>
+    /// <param name="channelList">Collection of strings that contain youtube channel ids</param>
+    /// <returns>A list of youtube channel objects</returns>
+    private List<YoutubeChannel> GetChannelFromID(IEnumerable<string> channelList){
+        List<YoutubeChannel> _channels = new List<YoutubeChannel>();
+        foreach(var userId in channelList){
+            _channels.Add(new YoutubeChannel{
+                author = getChannelAuthor(userId),
+                id = userId,
+            });
+            Thread.Sleep(500); //Probably good to sleep in between requests
+        }
+        return _channels;
     }
 
 
@@ -186,7 +227,7 @@ class ChannelManager{
             //let's check if they are in the database
             foreach(var video in videos){
                 if(!HasBeenNotified(video)){
-                    
+
                 }
                 Console.WriteLine("Video=" + video.name + " " + HasBeenNotified(video));
             }
