@@ -101,6 +101,9 @@ class ChannelManager{
     }
 
 
+    /// <summary>
+    /// Add Youtube channels from youtube-channels.json
+    /// </summary>
     public void AddChannels(){
         //Load the json to get our existing channels
         Console.WriteLine("Adding YouTube channels to server...");
