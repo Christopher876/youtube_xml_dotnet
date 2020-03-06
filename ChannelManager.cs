@@ -185,6 +185,9 @@ class ChannelManager{
             var videos = parser.ParseVideos().Distinct(new VideoEqualityChecker());
             //let's check if they are in the database
             foreach(var video in videos){
+                if(!HasBeenNotified(video)){
+                    
+                }
                 Console.WriteLine("Video=" + video.name + " " + HasBeenNotified(video));
             }
         }
