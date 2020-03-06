@@ -39,10 +39,8 @@ class ChannelManager{
             //If it exists, start with this json
             JObject json;
             //If file is empty, create the file hierarchy
-            if(!File.Exists(@"youtube-channels.json") || new FileInfo(@"youtube-channels.json").Length == 0){
-                json = new JObject(new JProperty("channels"));
-                File.WriteAllText(@"youtube-channels.json",JsonConvert.SerializeObject(json));
-            }
+            json = new JObject(new JProperty("channels"));
+            File.WriteAllText(@"youtube-channels.json",JsonConvert.SerializeObject(json));
             json = JObject.Parse(File.ReadAllText(@"youtube-channels.json"));
             JArray channelsArray = (JArray)json["channels"];
             //After checking if it exists, lets add all the channels with their ids to the json
@@ -52,6 +50,23 @@ class ChannelManager{
                     new JProperty("channel-id",channel.id)
                 });
             }
+
+            //Now that we have the channel list, lets add all the initial videos so that there is no notification
+            using(var db = new VideoContext()){
+                foreach(var channel in _channels){
+                    Thread.Sleep(1000);
+                    var feed = getChannelFeed(channel.id);
+                    Parser parser = new Parser(feed);
+                    var videos = parser.ParseVideos();
+                    foreach(var video in videos){
+                        if(db.videos.Where(x => x.id != video.id).ToArray().Length == 0)
+                            db.Add(video);
+                    }
+                }
+                db.SaveChanges();
+            }
+
+
             //Set the class channels variable to the all of the new channels that were found and save the file
             SetChannels(json);
             SaveChannelList();
@@ -92,13 +107,14 @@ class ChannelManager{
                     json = new JObject(new JProperty("channels"));
                 }
 
-                //After checking if it exists, lets add all the channels with their ids to the json
+                
             }
         }
         else{
             Console.WriteLine("Added Something");
         }
     }
+
 
     /// <summary>
     /// Retrieves the XML feed from a given youtube channel id
@@ -110,6 +126,7 @@ class ChannelManager{
         string result = "";
         using (var client = new HttpClient())
         {
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0");
             HttpResponseMessage response = client.GetAsync(url).Result;
             response.EnsureSuccessStatusCode();
             result = response.Content.ReadAsStringAsync().Result;
@@ -156,10 +173,21 @@ class ChannelManager{
     /// <param name="threads">Number of threads that should be used to check for video updates</param>
     /// <returns>List of videos that are new</returns>
     public List<Video> CheckForVideoUpdates(uint threads = 2){
+        //TODO Add a queue and multithreading so that the checks will be faster
         //Create a Queue so that the channels can be run down until empty by the threads
-        var queue = new Queue<YoutubeChannel>(channels);
-
+        //var queue = new Queue<YoutubeChannel>(channels);
         //Check each channel by spawning more threads so it will be faster (only if set)
+
+        foreach(var channel in channels){
+            Thread.Sleep(5000);
+            var feed = getChannelFeed(channel.id);
+            Parser parser = new Parser(feed);
+            var videos = parser.ParseVideos().Distinct(new VideoEqualityChecker());
+            //let's check if they are in the database
+            foreach(var video in videos){
+                Console.WriteLine("Video=" + video.name + " " + HasBeenNotified(video));
+            }
+        }
         
         //If there is a new video then add to a list all of the new videos that should be sent as a notification
 
@@ -167,16 +195,16 @@ class ChannelManager{
     }
 
     /// <summary>
-    /// Check if the video is already in the database by id, if it is then return true which tells the program not to send a notification.
+    /// Check if the video is already in the database by id, if true then we have sent a notification and false if we have not
     /// </summary>
     /// <param name="video"></param>
     /// <returns>if the video is in the database</returns>
-    private bool CheckNotifiedStatus(Video video){
+    private bool HasBeenNotified(Video video){
         using(VideoContext db = new VideoContext()){
             var notNotified = db.videos
                 .Where(x => x.id.Contains(video.id))
                 .ToArray();
-            return (notNotified.Length == 0); //if the length is 0 then we have not sent a notification. If not 0 then we have to send a notification     
+            return (notNotified.Length != 0);  
         }
     }
     
