@@ -142,6 +142,15 @@ class ChannelManager{
         }
     }
 
+    private void SaveVideosToSql(IEnumerable<Video> videos){
+        using(var db = new VideoContext()){
+            foreach(var video in videos){
+                db.Add(video);
+            }
+            db.SaveChanges();
+        }
+    }
+
     /// <summary>
     /// Get all youtube channels
     /// </summary>
@@ -226,18 +235,18 @@ class ChannelManager{
             Thread.Sleep(5000);
             var feed = getChannelFeed(channel.id);
             Parser parser = new Parser(feed);
-            var videos = parser.ParseVideos().Distinct(new VideoEqualityChecker());
+            var videos = parser.ParseVideos().Distinct(new VideoEqualityChecker()); //TODO VideoEqualityChecker potentially not needed
+
             //let's check if they are in the database
+            List<Video> videosToAdd = new List<Video>();
             foreach(var video in videos){
                 if(!HasBeenNotified(video)){
-
+                    videosToAdd.Add(video);
+                    Console.WriteLine("Video = " + video.name + " channel = " + channel.author);
                 }
-                Console.WriteLine("Video=" + video.name + " " + HasBeenNotified(video));
             }
+            SaveVideosToSql(videosToAdd);
         }
-        
-        //If there is a new video then add to a list all of the new videos that should be sent as a notification
-
         return null;
     }
 
