@@ -13,8 +13,11 @@ namespace youtube_xml_dotnet
             [Option('l',"load-channels",Required=false,HelpText = "Load the \"channel-list.txt\" channels into the server")]
             public bool LoadChannelList{get;set;}
 
-            [Option('f',"fore-intial",Required=false,HelpText = "Force server to regenerate the initial manager")]
+            [Option('f',"force-intial",Required=false,HelpText = "Force server to regenerate the initial manager")]
             public bool ForceInitialGeneration{get;set;}
+
+            [Option('c',"check",Required=false,HelpText = "Check for any new videos from the channels")]
+            public bool CheckVideos{get;set;}
         }
 
         static void Main(string[] args)
@@ -35,6 +38,10 @@ namespace youtube_xml_dotnet
                     //Generate the initial files that are needed
                     else if(!File.Exists(@"youtube-channels.json") || o.ForceInitialGeneration){
                         manager.GenerateInitialManager();
+                    }
+                    if(o.CheckVideos){
+                        manager.LoadChannelList();
+                        manager.CheckForVideoUpdates();
                     }
                 });
                 //manager.GenerateInitialManager();
