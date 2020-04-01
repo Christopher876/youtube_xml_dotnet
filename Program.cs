@@ -6,7 +6,6 @@ namespace youtube_xml_dotnet
 {
     class Program
     {
-        private static int testNumber = 0;
         public class Options{
             [Option('l',"load-channels",Required = false,HelpText = "Load the \"channel-list.txt\" channels into the server")]
             public bool LoadChannelList{get;set;}
