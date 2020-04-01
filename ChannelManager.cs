@@ -10,7 +10,24 @@ using HtmlAgilityPack;
 using System.Xml.Linq;
 
 class ChannelManager{
-    List<YoutubeChannel> channels;
+    private List<YoutubeChannel> channels;
+    public bool isChannelsLoaded = false;
+
+    private static ChannelManager instance;
+    private static object syncLock = new object();
+
+    public static ChannelManager Instance{
+        get{
+            lock(syncLock){
+                if(instance == null){
+                    instance = new ChannelManager();
+                }
+            }
+            return instance;
+        }
+    }
+
+
     public ChannelManager(IEnumerable<YoutubeChannel> channels = null){
         if(channels != null)
             this.channels = channels.ToList();
@@ -305,5 +322,6 @@ class ChannelManager{
     public void LoadChannelList(){
         JObject json = JObject.Parse(File.ReadAllText(@"youtube-channels.json"));
         SetChannels(json);
+        isChannelsLoaded = true;
     }
 }
