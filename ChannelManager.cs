@@ -138,6 +138,14 @@ class ChannelManager{
             SaveChannelsToSql();
             SaveChannelList();
         }
+        Console.WriteLine("Finished added channels");
+    }
+
+    public void RemoveChannel(string channelName){
+        JObject json = JObject.Parse(File.ReadAllText(@"youtube-channels.json"));
+        json["channels"].Where(x => x["author"].ToString() == channelName).First().Remove();
+        SetChannels(json);
+        SaveChannelList();
     }
 
     /// <summary>
@@ -146,7 +154,7 @@ class ChannelManager{
     private void SaveChannelsToSql(){
         using(var db = new VideoContext()){
             foreach(var channel in channels){
-                Thread.Sleep(1000);
+                Thread.Sleep(500);
                 var feed = getChannelFeed(channel.id);
                 Parser parser = new Parser(feed);
                 var videos = parser.ParseVideos();
@@ -242,14 +250,14 @@ class ChannelManager{
     /// </summary>
     /// <param name="threads">Number of threads that should be used to check for video updates</param>
     /// <returns>List of videos that are new</returns>
-    public List<Video> CheckForVideoUpdates(uint threads = 2){
+    public List<Video> CheckForVideoUpdates(uint threads = 2, int ytWait = 500){
         //TODO Add a queue and multithreading so that the checks will be faster
         //Create a Queue so that the channels can be run down until empty by the threads
         //var queue = new Queue<YoutubeChannel>(channels);
-        //Check each channel by spawning more threads so it will be faster (only if set)
+        //Check each channel by spawning more threads so it will be faster
 
         foreach(var channel in channels){
-            Thread.Sleep(5000);
+            Thread.Sleep(ytWait); //Sleep in between YouTube Requests
             var feed = getChannelFeed(channel.id);
             Parser parser = new Parser(feed);
             var videos = parser.ParseVideos().Distinct(new VideoEqualityChecker()); //TODO VideoEqualityChecker potentially not needed
@@ -259,7 +267,7 @@ class ChannelManager{
             foreach(var video in videos){
                 if(!HasBeenNotified(video)){
                     videosToAdd.Add(video);
-                    Console.WriteLine("Video = " + video.name + " channel = " + channel.author);
+                    Console.WriteLine($"{video.name} by {channel.author} {video.id}");
                 }
             }
             SaveVideosToSql(videosToAdd);

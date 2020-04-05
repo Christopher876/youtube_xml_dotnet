@@ -16,8 +16,11 @@ namespace youtube_xml_dotnet
             [Option('c',"check",Required = false,HelpText = "Check for any new videos from the channels")]
             public bool CheckVideos{get;set;}
 
-            [Option('t',"time",Required = false,HelpText = "Test Hangfire Background")]
+            [Option('t',"time",Default = 3600,Required = false,HelpText = "Interval for YouTube Update Checks")]
             public int Interval{get;set;}
+
+            [Option("test",Required = false,HelpText = "Test")]
+            public bool tester{get;set;}
         }
 
         public static void ColorPrint(ConsoleColor color, string output){
@@ -26,7 +29,7 @@ namespace youtube_xml_dotnet
             Console.ResetColor();
         }
 
-        public static void TestBackground(){
+        public static void YtBackground(){
             ColorPrint(ConsoleColor.Green,"Checking for new videos");
             ChannelManager.Instance.CheckForVideoUpdates();
             ColorPrint(ConsoleColor.Blue,"Finished new video check");
@@ -52,6 +55,7 @@ namespace youtube_xml_dotnet
                     if(o.CheckVideos){
                         ChannelManager.Instance.LoadChannelList();
                         ChannelManager.Instance.CheckForVideoUpdates();
+                        Environment.Exit(0);
                     }
 
                     if(!ChannelManager.Instance.isChannelsLoaded)

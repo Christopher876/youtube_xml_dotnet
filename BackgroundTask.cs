@@ -8,7 +8,7 @@ namespace youtube_xml_dotnet{
     {
         public Task Execute(IJobExecutionContext context)
         {
-            Program.TestBackground();
+            Program.YtBackground();
             return null; //TODO Probably a better way to do this?
         }
     }
