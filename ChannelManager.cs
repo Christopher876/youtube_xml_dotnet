@@ -129,7 +129,7 @@ class ChannelManager{
 
         if(File.Exists(@"channel-list.txt")){
             //Get all the ids
-            List<string> s = File.ReadAllLines(@"channel-list.txt").ToList();
+            var s = File.ReadAllLines(@"channel-list.txt").ToList().Where(x => !channels.Any(y => x == y.id));
             List<YoutubeChannel> _channels = GetChannelFromID(s);
 
             //Remove any duplicated channels
