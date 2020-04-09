@@ -1,6 +1,10 @@
 ﻿using System;
 using System.IO;
 using CommandLine;
+using Email;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 namespace youtube_xml_dotnet
 {
@@ -19,20 +23,17 @@ namespace youtube_xml_dotnet
             [Option('t',"time",Default = 3600,Required = false,HelpText = "Interval for YouTube Update Checks")]
             public int Interval{get;set;}
 
+            [Option('e',"email",Required = false,HelpText = "Enable Email to send updates")]
+            public bool EnableEmail{get;set;}
+
             [Option("test",Required = false,HelpText = "Test")]
             public bool tester{get;set;}
         }
 
-        public static void ColorPrint(ConsoleColor color, string output){
-            Console.ForegroundColor = color;
-            Console.WriteLine(output);
-            Console.ResetColor();
-        }
-
         public static void YtBackground(){
-            ColorPrint(ConsoleColor.Green,"Checking for new videos");
+            Utils.ColorPrint(ConsoleColor.Green,"Checking for new videos");
             ChannelManager.Instance.CheckForVideoUpdates();
-            ColorPrint(ConsoleColor.Blue,"Finished new video check");
+            Utils.ColorPrint(ConsoleColor.Blue,"Finished new video check");
         }
 
         static void Main(string[] args)
@@ -48,16 +49,48 @@ namespace youtube_xml_dotnet
                     if(o.LoadChannelList){
                         ChannelManager.Instance.AddChannels();
                     }
+
+                    if(o.EnableEmail){
+                        if(File.Exists(@"email-login.json")){
+                            var json = JObject.Parse(File.ReadAllText(@"email-login.json"));
+
+                            //Catch any 'bad' email-login.json files with bad values
+                            try{
+                                var credentials = new EmailCredentials(){
+                                    Username = json["username"].ToString(),
+                                    Password = json["password"].ToString(),
+                                    EnableSSL = (bool)json["EnableSSL"],
+                                    SmtpAddress = json["SMTP"].ToString()
+                                };
+
+                                ChannelManager.Instance.isEmailEnabled = true;
+                                ChannelManager.Instance.email = new Email.Email(credentials);
+                                
+                                var receivers = json["recipients"];
+                                ChannelManager.Instance.email.recipients = new List<string>();
+                                foreach(var receiver in receivers){
+                                    ChannelManager.Instance.email.recipients.Add(receiver.ToString());
+                                }
+                                
+                            }
+                            catch(Exception e){
+                                Console.WriteLine("email-login.json is formatted incorrectly");
+                            }
+                        }
+                    }
+
                     //Generate the initial files that are needed
-                    else if(!File.Exists(@"youtube-channels.json") || o.ForceInitialGeneration){
+                    if(!File.Exists(@"youtube-channels.json") || o.ForceInitialGeneration){
                         ChannelManager.Instance.GenerateInitialManager();
                     }
+
                     if(o.CheckVideos){
                         ChannelManager.Instance.LoadChannelList();
                         ChannelManager.Instance.CheckForVideoUpdates();
                         Environment.Exit(0);
                     }
 
+                    #region Program Command Line
                     if(!ChannelManager.Instance.isChannelsLoaded)
                         ChannelManager.Instance.LoadChannelList();
                     //Quartz.net implementation of a background scheduler
@@ -79,15 +112,16 @@ namespace youtube_xml_dotnet
                                 break;
                             case "load":
                             case "l":
-                                ColorPrint(ConsoleColor.Green,"Loading new channels from channel-list.txt...");
+                                Utils.ColorPrint(ConsoleColor.Green,"Loading new channels from channel-list.txt...");
                                 ChannelManager.Instance.AddChannels();
-                                ColorPrint(ConsoleColor.Blue,"Finished loading new channels");
+                                Utils.ColorPrint(ConsoleColor.Blue,"Finished loading new channels");
                                 break;
                             default:
                                 Console.WriteLine("Not a valid command");
                                 break;
                         }
                     }
+                    #endregion
                 });
         }
     }

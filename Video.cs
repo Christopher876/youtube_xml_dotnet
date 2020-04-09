@@ -13,4 +13,5 @@ public class Video{
     public uint views{get;set;}
     public DateTime uploadDate{get;set;}
     public string thumbnail{get;set;}
+    public string author{get;set;}
 }

@@ -8,10 +8,14 @@ using System.IO;
 using System.Net.Http;
 using HtmlAgilityPack;
 using System.Xml.Linq;
+using Email;
+using System.Text;
 
 class ChannelManager{
     private List<YoutubeChannel> channels;
     public bool isChannelsLoaded = false;
+    public bool isEmailEnabled = false;
+    public Email.Email email;
 
     private static ChannelManager instance;
     private static object syncLock = new object();
@@ -129,7 +133,7 @@ class ChannelManager{
 
         if(File.Exists(@"channel-list.txt")){
             //Get all the ids
-            var s = File.ReadAllLines(@"channel-list.txt").ToList().Where(x => !channels.Any(y => x == y.id));
+            var s = File.ReadAllLines(@"channel-list.txt").ToList().Where(x => !channels.Any(y => x == y.id)); //Filter out the ids that are already in the server
             List<YoutubeChannel> _channels = GetChannelFromID(s);
 
             //Remove any duplicated channels
@@ -256,6 +260,10 @@ class ChannelManager{
         //var queue = new Queue<YoutubeChannel>(channels);
         //Check each channel by spawning more threads so it will be faster
 
+        //Email Variables
+        bool toNotify = false;
+        List<Video> videosToAdd = new List<Video>();
+
         foreach(var channel in channels){
             Thread.Sleep(ytWait); //Sleep in between YouTube Requests
             var feed = getChannelFeed(channel.id);
@@ -263,15 +271,32 @@ class ChannelManager{
             var videos = parser.ParseVideos().Distinct(new VideoEqualityChecker()); //TODO VideoEqualityChecker potentially not needed
 
             //let's check if they are in the database
-            List<Video> videosToAdd = new List<Video>();
             foreach(var video in videos){
                 if(!HasBeenNotified(video)){
-                    videosToAdd.Add(video);
+                    videosToAdd.Add(new Video(){
+                        author = channel.author,
+                        id = video.id,
+                        name = video.name,
+                        thumbnail = video.thumbnail,
+                        uploadDate = video.uploadDate,
+                        views = video.views
+                    });
                     Console.WriteLine($"{video.name} by {channel.author} {video.id}");
                 }
             }
-            SaveVideosToSql(videosToAdd);
         }
+        
+        //Send an email about the new video updates
+        if(isEmailEnabled && videosToAdd.Count != 0){
+            string subject = $"Youtube Video Updates for {DateTime.Now.Hour} is available!";
+            StringBuilder body = new StringBuilder();
+            foreach(var video in videosToAdd){
+                body.Append($"{video.name} by {video.author} has uploaded a new video at https://www.youtube.com/watch?v={video.id} at {video.uploadDate}!\n\n");
+            }
+            email.SendEmail(subject,body.ToString());
+        }
+        SaveVideosToSql(videosToAdd);
+
         return null;
     }
 
